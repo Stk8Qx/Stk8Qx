@@ -6,9 +6,17 @@ ctx.canvas.height = 600;
 //bgn color
 ctx.backgroundColor = 'red';
 
-var color = 'green';
+//color
+var r = 0,
+    g = 255,
+    color = "rgb("+r+","+g+",0)";
+
+//flags for colors
+var isRedDown = false;
+var isGreenDown = true;
+
+//movement
 var speed = 3,
-    corner = 50,
     rad = 20,
     moveY = speed;
 
@@ -34,10 +42,20 @@ function drawMe() {
 }
 
 function changeColor() {
-    if (color == "green") color = "red";
-    else color = "green";
-    drawMe(color);
+    //change gradient dir
+    if (r <= 0 || r >= 255) isRedDown = !isRedDown;
+    if (g <= 0 || g >= 255) isGreenDown = !isGreenDown;
+    
+    //change color smooth (gradient)
+    if (isRedDown) r+=1;
+    else r-=1;
+    
+    if (isGreenDown) g+=1;
+    else g-=1;
+    
+    color = "rgb("+r+","+g+",0)";
+    //console.log(color);
 }
 
-setInterval(changeColor, 1000);
+setInterval(changeColor, 10);
 setInterval(drawMe, 10);
