@@ -20,6 +20,11 @@ var speed = 3,
     rad = 20,
     moveY = speed;
 
+//clock
+var intervaltime = 10,
+    clock = 255/1000 * intervaltime;
+    
+
 var ball = { x: 400, y: 400 };
 
 function drawMe() {
@@ -47,11 +52,11 @@ function changeColor() {
     if (g <= 0 || g >= 255) isGreenDown = !isGreenDown;
     
     //change color smooth (gradient)
-    if (isRedDown) r+=1;
-    else r-=1;
+    if (isRedDown) r+=clock;
+    else r-=clock;
     
-    if (isGreenDown) g+=1;
-    else g-=1;
+    if (isGreenDown) g+=clock;
+    else g-=clock;
     
     color = "rgb("+r+","+g+",0)";
     //console.log(color);
@@ -59,3 +64,5 @@ function changeColor() {
 
 setInterval(changeColor, 10);
 setInterval(drawMe, 10);
+
+//todo fixupdate
