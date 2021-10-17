@@ -5,6 +5,9 @@ $( window ).on( "load", function() {
     ctx2.canvas.height = 600;
     
     var Config = {
+        frameUpdate: 10,
+        physicUpdate: 10,
+        
         moveLeft: 65,
         moveRight: 68,
         moveLeftAlt: 37,
@@ -13,6 +16,7 @@ $( window ).on( "load", function() {
         
         enemySize: 10,
         bulletSize: 4,
+        bulletSpeed: 0.7,
     }
     
     //event listener
@@ -59,7 +63,7 @@ $( window ).on( "load", function() {
         shoot(){
             console.log('pew pew');
             //TODO: add limit shoots per sec
-            bulletsManager.newBullet(this.posX + this.sizeX/2,this.posY,Config.bulletSize);
+            bulletsManager.newBullet(this.posX + this.sizeX/2,this.posY,Config.bulletSize,Config.bulletSpeed);
             bulletsManager.bulletsLists();
         }
     }
@@ -83,22 +87,25 @@ $( window ).on( "load", function() {
 
     //bullet
     class Bullet {
-        constructor (posX, posY, radius) {
+        constructor (posX, posY, radius, speed) {
             this.posX = posX;
             this.posY = posY;
             this.radius = radius;
+            this.speed = speed;
         }
         
         draw() {
             ctx2.beginPath();
-            ctx2.fillStyle = "silver";
+            ctx2.fillStyle = "white";
             ctx2.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
             ctx2.fill();
             ctx2.closePath();
         }
         
         physicUpdate() {
-            
+            var fixedSpeed = (this.speed/Config.physicUpdate) * (1000/Config.physicUpdate);
+            //console.log(fixedSpeed);
+            this.posY -= fixedSpeed;
         }
     }
     //bullets manager
@@ -108,12 +115,18 @@ $( window ).on( "load", function() {
         constructor () {
         }
         
-        newBullet(posX, posY, radius) {this.bulletsList.push(new Bullet(posX, posY, radius))};
+        newBullet(posX, posY, radius, speed) {this.bulletsList.push(new Bullet(posX, posY, radius, speed))};
         bulletsLists() {console.log(this.bulletsList)};
         
         draw() {
             this.bulletsList.forEach(e =>
                 e.draw()                    
+            ); 
+        }
+    
+        physicUpdate(){
+            this.bulletsList.forEach(e =>
+                e.physicUpdate()                    
             ); 
         }
     }
@@ -125,6 +138,12 @@ $( window ).on( "load", function() {
         enemy.draw();
         bulletsManager.draw();
     }
+
+    function physicUpdate(){
+        /*player.draw();
+        enemy.draw();*/
+        bulletsManager.physicUpdate();
+    }
     //instance player
     const player = new Player (390, 550, 20, 40);
     //instance enemy
@@ -132,5 +151,6 @@ $( window ).on( "load", function() {
     //instance bulletsManager
     const bulletsManager = new BulletsManager ();
 
-    setInterval(draw, 10);
+    setInterval(physicUpdate, Config.frameUpdate); // update physics
+    setInterval(draw, Config.physicUpdate); //draw frame
 });
