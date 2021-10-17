@@ -81,6 +81,17 @@ $( window ).on( "load", function() {
             ctx2.fill();
             ctx2.closePath();
         }
+        
+        checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
+            var distanceBetween = Math.sqrt(Math.pow((this.posX - bulletPosX),2) + Math.pow((this.posY - bulletPosY),2))
+            var sumOfRadius = this.radius + bulletRadius;
+            if (distanceBetween >= sumOfRadius){
+                //collision detected
+                //TODO destroy this obj
+                return true;
+            }
+            else return false;
+        }
     }
 
     //bullet
@@ -101,11 +112,21 @@ $( window ).on( "load", function() {
         }
         
         physicUpdate() {
+            this.move();
+            this.collisionDetectionCircle();
+        }
+        
+        move() {
             var fixedSpeed = (this.speed/Config.physicUpdate) * (1000/Config.physicUpdate);
-            //console.log(fixedSpeed);
             this.posY -= fixedSpeed;
         }
+        
+        collisionDetectionCircle(){
+            var isDetected = enemiesManager.checkCollisionCircle(this.posX, this.posY, this.radius);
+            if (isDetected) bulletsManager.destroyBullet(this);
+        }
     }
+    
     //bullets manager
     class BulletsManager {
         bulletsList = new Array;
@@ -128,8 +149,10 @@ $( window ).on( "load", function() {
             ); 
         }
     
-        //TODO destroy bullet
-        //TODO collision bullet
+        destroyBullet(bullet){
+            //TODO remove form bulletsList
+            //delete bullet;
+        }
     }
 
     //enemies manager
@@ -153,12 +176,19 @@ $( window ).on( "load", function() {
         
         draw() {
             this.enemiesList.forEach(e =>
-                e.draw()                    
+                e.draw()                   
             ); 
         }
     
         physicUpdate(){
         }
+        
+        checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
+            this.enemiesList.forEach(e =>
+                e.checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius)                
+            ); 
+        }
+        
     }
                
     function draw(){
