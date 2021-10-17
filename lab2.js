@@ -17,6 +17,14 @@ $( window ).on( "load", function() {
         enemySize: 20,
         bulletSize: 4,
         bulletSpeed: 0.7,
+        
+        level: 1,
+        score: 0,
+        
+        enemyRow: 3,
+        enemyRowMax: 6,
+        enemyColumn: 1,
+        enemyColumnMax: 4,
     }
     
     //event listener
@@ -32,7 +40,21 @@ $( window ).on( "load", function() {
         }
         
     }, false);
-
+    
+    //hud
+    class HUD {
+        constructor () {
+            
+        }
+        
+        draw() {
+            ctx2.font = "24px Arial";
+            ctx2.fillStyle = "black";
+            ctx2.fillText("Level: "+Config.level, 10, 25);
+            ctx2.fillText("Score: "+Config.score, 10, 50);
+        }
+    }
+    
     //player
     class Player {
         constructor (posX, posY, sizeX, sizeY) {
@@ -87,8 +109,7 @@ $( window ).on( "load", function() {
             var distanceBetween = Math.sqrt(Math.pow((this.posX - bulletPosX),2) + Math.pow((this.posY - bulletPosY),2))
             var sumOfRadius = this.radius + bulletRadius;
             if (distanceBetween <= sumOfRadius){
-                //console.log("detected in enemy")
-                //collision detected
+                gameManager.scoreUp(1);
                 enemiesManager.destroyEnemy(this);
                 return true;
             }
@@ -154,7 +175,7 @@ $( window ).on( "load", function() {
         }
     
         destroyBullet(bullet){
-            console.log(bullet.id);
+            //console.log(bullet.id);
             var index = this.bulletsList.findIndex((e => e === bullet));
             this.bulletsList.splice(index,1);
             /*delete bullet.speed;
@@ -163,6 +184,10 @@ $( window ).on( "load", function() {
             delete bullet.radius;
             console.log(bullet);*/
         }
+    
+        destroyAllBullet(){
+            this.bulletsList.splice(0);
+        }
     }
 
     //enemies manager
@@ -170,6 +195,10 @@ $( window ).on( "load", function() {
         enemiesList = new Array;
         
         constructor (rows,columns) {
+            this.createEnemies(rows,columns);
+        }
+
+        createEnemies(rows,columns){
             for(var i=0;i<columns;i++){
                 for(var j=0;j<rows;j++){
                     //TODO make postion for new enemies more flexible (fit) to screen
@@ -178,7 +207,6 @@ $( window ).on( "load", function() {
                                   Config.enemySize);
                 }
             }
-                
         }
         
         newEnemy(posX, posY, radius) {this.enemiesList.push(new Enemy(posX, posY, radius))};
@@ -205,6 +233,7 @@ $( window ).on( "load", function() {
             return isDetected;
         }
 
+        //remove obj form array enemiesList and add score/level
         destroyEnemy(enemy){
             //console.log(enemy.id);
             var index = this.enemiesList.findIndex((e => e === enemy));
@@ -214,16 +243,51 @@ $( window ).on( "load", function() {
             delete bullet.posY;
             delete bullet.radius;
             console.log(bullet);*/
+            if (this.enemiesList.length == 0) {
+                gameManager.levelComplete();
+            }
         }
         
     }
                
+    class GameManager{
+        
+        constructor () {
+            
+        }
+        
+        levelComplete(){
+            bulletsManager.destroyAllBullet();
+            this.levelUp();
+            this.scoreUp(10);
+            
+            if (Config.level % 2 == 1) {
+                if(Config.enemyRow < Config.enemyRowMax) Config.enemyRow += 1;
+            }
+            else if (Config.level % 2 == 0) {
+                if(Config.enemyColumn < Config.enemyColumnMax) Config.enemyColumn += 1;
+            }
+                
+            
+            enemiesManager.createEnemies(Config.enemyColumn, Config.enemyRow);
+        }
+        
+        scoreUp(score) {
+            Config.score += score;
+        }
+        
+        levelUp() {
+            Config.level++;
+        }
+    }
+    
     function draw(){
         ctx2.clearRect(0, 0, 800, 600);
         
         player.draw();
         enemiesManager.draw();
         bulletsManager.draw();
+        hud.draw();
     }
 
     function physicUpdate(){
@@ -231,14 +295,12 @@ $( window ).on( "load", function() {
         enemy.draw();*/
         bulletsManager.physicUpdate();
     }
-    //instance player
+    //instance single object class player bulletsManager enemiesManager hud
     const player = new Player (390, 550, 20, 40);
-    //instance enemy
-    //const enemy = new Enemy (400, 30, Config.enemySize);
-    //instance bulletsManager
     const bulletsManager = new BulletsManager ();
-    //instance enemiesManager
-    const enemiesManager = new EnemiesManager (4, 6);
+    const enemiesManager = new EnemiesManager (Config.enemyColumn, Config.enemyRow);
+    const hud = new HUD ();
+    const gameManager = new GameManager ();
 
     setInterval(physicUpdate, Config.frameUpdate); // update physics
     setInterval(draw, Config.physicUpdate); //draw frame
