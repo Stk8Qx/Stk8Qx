@@ -69,6 +69,7 @@ $( window ).on( "load", function() {
     //enemy
     class Enemy {
         constructor (posX, posY, radius) {
+            this.id = Math.random();
             this.posX = posX;
             this.posY = posY;
             this.radius = radius;
@@ -85,9 +86,10 @@ $( window ).on( "load", function() {
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
             var distanceBetween = Math.sqrt(Math.pow((this.posX - bulletPosX),2) + Math.pow((this.posY - bulletPosY),2))
             var sumOfRadius = this.radius + bulletRadius;
-            if (distanceBetween >= sumOfRadius){
+            if (distanceBetween <= sumOfRadius){
+                //console.log("detected in enemy")
                 //collision detected
-                //TODO destroy this obj
+                enemiesManager.destroyEnemy(this);
                 return true;
             }
             else return false;
@@ -97,6 +99,7 @@ $( window ).on( "load", function() {
     //bullet
     class Bullet {
         constructor (posX, posY, radius, speed) {
+            this.id = Math.random();
             this.posX = posX;
             this.posY = posY;
             this.radius = radius;
@@ -123,6 +126,7 @@ $( window ).on( "load", function() {
         
         collisionDetectionCircle(){
             var isDetected = enemiesManager.checkCollisionCircle(this.posX, this.posY, this.radius);
+            //console.log(isDetected);
             if (isDetected) bulletsManager.destroyBullet(this);
         }
     }
@@ -139,19 +143,25 @@ $( window ).on( "load", function() {
         
         draw() {
             this.bulletsList.forEach(e =>
-                e.draw()                    
+                e.draw()
             ); 
         }
     
         physicUpdate(){
             this.bulletsList.forEach(e =>
-                e.physicUpdate()                    
+                e.physicUpdate()
             ); 
         }
     
         destroyBullet(bullet){
-            //TODO remove form bulletsList
-            //delete bullet;
+            console.log(bullet.id);
+            var index = this.bulletsList.findIndex((e => e === bullet));
+            this.bulletsList.splice(index,1);
+            /*delete bullet.speed;
+            delete bullet.posX;
+            delete bullet.posY;
+            delete bullet.radius;
+            console.log(bullet);*/
         }
     }
 
@@ -184,9 +194,26 @@ $( window ).on( "load", function() {
         }
         
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
-            this.enemiesList.forEach(e =>
-                e.checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius)                
-            ); 
+            var isDetected = false;
+            this.enemiesList.forEach(function(e){
+                if(e.checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius)){
+                    
+                    isDetected = true;
+                    return isDetected;
+                }
+            }); 
+            return isDetected;
+        }
+
+        destroyEnemy(enemy){
+            //console.log(enemy.id);
+            var index = this.enemiesList.findIndex((e => e === enemy));
+            this.enemiesList.splice(index,1);
+            /*delete bullet.speed;
+            delete bullet.posX;
+            delete bullet.posY;
+            delete bullet.radius;
+            console.log(bullet);*/
         }
         
     }
