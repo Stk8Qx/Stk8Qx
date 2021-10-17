@@ -14,7 +14,7 @@ $( window ).on( "load", function() {
         moveRightAlt: 39,
         shoot: 32,
         
-        enemySize: 10,
+        enemySize: 20,
         bulletSize: 4,
         bulletSpeed: 0.7,
     }
@@ -61,10 +61,8 @@ $( window ).on( "load", function() {
         }
         
         shoot(){
-            console.log('pew pew');
             //TODO: add limit shoots per sec
             bulletsManager.newBullet(this.posX + this.sizeX/2,this.posY,Config.bulletSize,Config.bulletSpeed);
-            bulletsManager.bulletsLists();
         }
     }
 
@@ -116,7 +114,7 @@ $( window ).on( "load", function() {
         }
         
         newBullet(posX, posY, radius, speed) {this.bulletsList.push(new Bullet(posX, posY, radius, speed))};
-        bulletsLists() {console.log(this.bulletsList)};
+        bulletsLists() {console.log(this.bulletsList)}; // TODO remove, only for debug
         
         draw() {
             this.bulletsList.forEach(e =>
@@ -129,13 +127,45 @@ $( window ).on( "load", function() {
                 e.physicUpdate()                    
             ); 
         }
+    
+        //TODO destroy bullet
+        //TODO collision bullet
     }
 
+    //enemies manager
+    class EnemiesManager {
+        enemiesList = new Array;
+        
+        constructor (rows,columns) {
+            for(var i=0;i<columns;i++){
+                for(var j=0;j<rows;j++){
+                    //TODO make postion for new enemies more flexible (fit) to screen
+                    this.newEnemy(110+i*(Config.enemySize+85),
+                                  100+j*(Config.enemySize+55),
+                                  Config.enemySize);
+                }
+            }
+                
+        }
+        
+        newEnemy(posX, posY, radius) {this.enemiesList.push(new Enemy(posX, posY, radius))};
+        enemiesLists() {console.log(this.enemiesList)}; // TODO remove, only for debug
+        
+        draw() {
+            this.enemiesList.forEach(e =>
+                e.draw()                    
+            ); 
+        }
+    
+        physicUpdate(){
+        }
+    }
+               
     function draw(){
         ctx2.clearRect(0, 0, 800, 600);
         
         player.draw();
-        enemy.draw();
+        enemiesManager.draw();
         bulletsManager.draw();
     }
 
@@ -147,9 +177,11 @@ $( window ).on( "load", function() {
     //instance player
     const player = new Player (390, 550, 20, 40);
     //instance enemy
-    const enemy = new Enemy (400, 30, Config.enemySize);
+    //const enemy = new Enemy (400, 30, Config.enemySize);
     //instance bulletsManager
     const bulletsManager = new BulletsManager ();
+    //instance enemiesManager
+    const enemiesManager = new EnemiesManager (4, 6);
 
     setInterval(physicUpdate, Config.frameUpdate); // update physics
     setInterval(draw, Config.physicUpdate); //draw frame
