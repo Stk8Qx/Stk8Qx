@@ -44,19 +44,21 @@ $( window ).on( "load", function() {
     
     //player
     class Player {
+        car = new Image();
+    
         constructor (posX, posY, sizeX, sizeY) {
+            this.car.src = "img\\car.png";
             this.posX = posX;
             this.posY = posY;
-            this.sizeX = sizeX;
-            this.sizeY = sizeY;
         }
 
         draw() {
-            ctx2.beginPath();
+            ctx2.drawImage(this.car,this.posX,this.posY,200,170);
+            /*ctx2.beginPath();
             ctx2.fillStyle = "black";
             ctx2.rect(this.posX, this.posY, this.sizeX,this.sizeY); 
             ctx2.fill();
-            ctx2.closePath();
+            ctx2.closePath();*/
         }
         
         move(dirMove){
@@ -81,7 +83,7 @@ $( window ).on( "load", function() {
         }
         
         draw() {
-            ctx2.drawImage(this.track,0,0);
+            ctx2.drawImage(this.track,this.posX,this.posY);
             /*ctx2.beginPath();
             ctx2.fillStyle = "red";
             ctx2.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
@@ -115,7 +117,7 @@ $( window ).on( "load", function() {
             if (r < 0.2) type = "roadL";
             else if (r > 0.8) type = "roadR";
             else type = "road";
-            this.newTrack(250,300,type);
+            this.newTrack(180,120,type);
         }
         
         newTrack(posX, posY, type) {this.trackList.push(new Track(posX, posY, type))};
@@ -193,8 +195,8 @@ $( window ).on( "load", function() {
     function draw(){
         ctx2.clearRect(0, 0, 800, 600);
         
-        player.draw();
         trackManager.draw();
+        player.draw();
         hud.draw();
     }
 
@@ -204,7 +206,7 @@ $( window ).on( "load", function() {
         //bulletsManager.physicUpdate();
     }
     //instance single object class player bulletsManager enemiesManager hud
-    const player = new Player (390, 550);
+    const player = new Player (355, 370);
     const trackManager = new TrackManager ();
     const hud = new HUD ();
     const gameManager = new GameManager ();
