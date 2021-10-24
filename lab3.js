@@ -49,9 +49,9 @@ $( window ).on( "load", function() {
         
         draw() {
             ctx2.font = "24px Arial";
-            ctx2.fillStyle = "black";   
-            ctx2.fillText("        Score:   "+Config.score, 10, 25);
-            ctx2.fillText("Best Score:   "+Config.bestScore, 10, 50);
+            ctx2.fillStyle = "white";   
+            ctx2.fillText(" Score:   "+Config.score, 10, 25);
+            //ctx2.fillText("Best Score:   "+Config.bestScore, 10, 50);
         }
     }
     
@@ -111,11 +111,11 @@ $( window ).on( "load", function() {
             if (this.isSteeringRight) this.acceleration += 1;
             if (this.isSteeringLeft) this.acceleration -= 1;
             
-            let max = 5;
+            let max = 1;
             if(this.acceleration>max) this.acceleration = max;
             if(this.acceleration<-max) this.acceleration = -max;
             
-            let c =0.5;
+            let c =0.3;
             this.posX += this.acceleration;
             if(this.acceleration>c) this.acceleration -= c;
             else if(this.acceleration<-c) this.acceleration += c;
@@ -141,11 +141,12 @@ $( window ).on( "load", function() {
             this.posY = posY;
         }
         
-        draw() {console.log(this.lastX);
+        draw() {
+                //left
             if (this.type == "roadL") ctx2.drawImage(this.track,this.posX+((this.lastX-1)*(Config.size)),this.posY,Config.size*2+20,Config.size);
-                
+                //right
             else if (this.type == "roadR") ctx2.drawImage(this.track,this.posX+(this.lastX*(Config.size)),this.posY,Config.size*2+20,Config.size);
-                
+                //forward
             else ctx2.drawImage(this.track,this.posX+(this.lastX*(Config.size)),this.posY,Config.size,Config.size);
             /*ctx2.beginPath();
             ctx2.fillStyle = "red";
@@ -158,14 +159,12 @@ $( window ).on( "load", function() {
             this.posY+=Config.speed;
         }
         
-        checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
-            var distanceBetween = Math.sqrt(Math.pow((this.posX - bulletPosX),2) + Math.pow((this.posY - bulletPosY),2))
-            var sumOfRadius = this.radius + bulletRadius;
-            if (distanceBetween <= sumOfRadius){
-                gameManager.scoreUp(1);
-                enemiesManager.destroyEnemy(this);
+        checkCollision() {
+            
+            if (player.posX < this.posX+(this.lastX)*(Config.size) || (player.posX+20) > (this.posX+(this.lastX)*(Config.size)+100)){
                 return true;
             }
+            
             else return false;
         }
     }
@@ -176,6 +175,10 @@ $( window ).on( "load", function() {
         
         constructor () {
             
+            this.buildNewStart();
+        }
+
+        buildNewStart(){
             for(let i = 600/Config.size; i >= 0; i--){
                 this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*i,0,"road");
             }
@@ -187,8 +190,8 @@ $( window ).on( "load", function() {
             if (!type) {
                 let r = Math.random();
                 //prevent from track appear too much left or right
-                if(lastX > ((600/Config.size))-2) r-=0.2;
-                if(lastX < -((600/Config.size))+2)r+=0.2;
+                if(lastX > ((600/Config.size))-4) r-=0.2;
+                if(lastX < -((600/Config.size))+4)r+=0.2;
                     
                 if (r < 0.2) type = "roadL";
                 else if (r > 0.8) type = "roadR";
@@ -223,7 +226,17 @@ $( window ).on( "load", function() {
             }
         }
 
-        checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
+        checkCollision() {
+            var isDetected = false;
+            this.trackList.forEach(function(e){
+                if (e.posY > 270 && e.posY < 470){ //player y = 370
+                    if(e.checkCollision()){
+                        isDetected = true;
+                        return isDetected;
+                    }
+                }
+            }); 
+            return isDetected
             /*var isDetected = false;
             this.trackList.forEach(function(e){
                 if(e.checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius)){
@@ -236,18 +249,18 @@ $( window ).on( "load", function() {
         }
 
         //remove obj form array enemiesList and add score/level
-        destroyTrack(track){
+        destroyTrack(){
             //console.log(enemy.id);
-            var index = this.trackList.findIndex((e => e === track));
-            this.trackList.splice(index,1);
+            //var index = this.trackList.findIndex((e => e === track));
+            this.trackList.splice(0);
             /*delete bullet.speed;
             delete bullet.posX;
             delete bullet.posY;
             delete bullet.radius;
             console.log(bullet);*/
-            if (this.trackList.length == 0) {
+            /*if (this.trackList.length == 0) {
                 gameManager.levelComplete();
-            }
+            }*/
         }
         
     }
@@ -274,12 +287,21 @@ $( window ).on( "load", function() {
             enemiesManager.createEnemies(Config.enemyColumn, Config.enemyRow);
         }
         
-        scoreUp(score) {
-            Config.score += score;
+        scoreUp() {
+            Config.score += 10;
         }
         
         levelUp() {
             Config.level++;
+        }
+        
+        gameoverstatment(){
+            if(trackManager.checkCollision()){
+                player.posX = 355;
+                trackManager.destroyTrack();
+                trackManager.buildNewStart();
+                Config.score = 0;
+            }
         }
     }
     
@@ -294,9 +316,7 @@ $( window ).on( "load", function() {
     function physicUpdate(){
         player.moveUpdate();
         trackManager.physicUpdate();
-        /*player.draw();
-        enemy.draw();*/
-        //bulletsManager.physicUpdate();
+        gameManager.gameoverstatment();
     }
     //instance single object class player bulletsManager enemiesManager hud
     const player = new Player (355, 370);
@@ -306,4 +326,5 @@ $( window ).on( "load", function() {
 
     setInterval(physicUpdate, Config.frameUpdate); // update physics
     setInterval(draw, Config.physicUpdate); //draw frame
+    setInterval(gameManager.scoreUp, 1000); //draw frame
 });
