@@ -28,6 +28,16 @@ $( window ).on( "load", function() {
         
     }, false);
     
+    document.addEventListener('keyup', function(e) {
+        if(e.keyCode==Config.moveLeft || e.keyCode==Config.moveLeftAlt ){
+            player.move("up");
+        }
+        if(e.keyCode==Config.moveRight  || e.keyCode==Config.moveRightAlt){
+            player.move("up");
+        }
+        
+    }, false);
+    
     //hud
     class HUD {
         constructor () {
@@ -45,15 +55,26 @@ $( window ).on( "load", function() {
     //player
     class Player {
         car = new Image();
+        carL = new Image();
+        carR = new Image();
+        isSteeringLeft = false;
+        isSteeringRight = false;
     
         constructor (posX, posY, sizeX, sizeY) {
             this.car.src = "img\\car.png";
+            this.carL.src = "img\\carL.png";
+            this.carR.src = "img\\carR.png";
             this.posX = posX;
             this.posY = posY;
         }
 
         draw() {
-            ctx2.drawImage(this.car,this.posX,this.posY,200,170);
+            if(this.isSteeringLeft) ctx2.drawImage(this.carL,this.posX,this.posY,200,170);
+            else if(this.isSteeringRight) ctx2.drawImage(this.carR,this.posX,this.posY,200,170);
+            else ctx2.drawImage(this.car,this.posX,this.posY,200,170);
+            
+            
+        
             /*ctx2.beginPath();
             ctx2.fillStyle = "black";
             ctx2.rect(this.posX, this.posY, this.sizeX,this.sizeY); 
@@ -62,12 +83,23 @@ $( window ).on( "load", function() {
         }
         
         move(dirMove){
+            console.log(dirMove);
             if (dirMove == "left"){
                 if(this.posX>=0+20) this.posX -= 10;
+                this.isSteeringLeft = true;
             
             } else if (dirMove == "right") {
-                if(this.posX<=ctx2.canvas.width-20-this.sizeX) this.posX += 10;
+                if(this.posX<=ctx2.canvas.width-20) this.posX += 10;
+                this.isSteeringRight = true;
+                
+            } else if (dirMove == "up") {
+                this.isSteeringLeft = false;
+                this.isSteeringRight = false;
             }
+        }
+    
+        moveUpdate(){
+            
         }
     }
 
@@ -129,7 +161,6 @@ $( window ).on( "load", function() {
         }
     
         physicUpdate(){
-            
         }
         
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
@@ -201,6 +232,7 @@ $( window ).on( "load", function() {
     }
 
     function physicUpdate(){
+        player.moveUpdate();
         /*player.draw();
         enemy.draw();*/
         //bulletsManager.physicUpdate();
