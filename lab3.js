@@ -8,7 +8,7 @@ $( window ).on( "load", function() {
         frameUpdate: 10,
         physicUpdate: 10,
         
-        size: 300,
+        size: 100,
         speed: 2,
         
         moveLeft: 65,
@@ -16,7 +16,7 @@ $( window ).on( "load", function() {
         moveLeftAlt: 37,
         moveRightAlt: 39,
         
-        bestScore: 1,
+        bestScore: 0,
         score: 0,
     }
     
@@ -48,10 +48,10 @@ $( window ).on( "load", function() {
         }
         
         draw() {
-            /*ctx2.font = "24px Arial";
-            ctx2.fillStyle = "black";
-            ctx2.fillText("Level: "+Config.level, 10, 25);
-            ctx2.fillText("Score: "+Config.score, 10, 50);*/
+            ctx2.font = "24px Arial";
+            ctx2.fillStyle = "black";   
+            ctx2.fillText("        Score:   "+Config.score, 10, 25);
+            ctx2.fillText("Best Score:   "+Config.bestScore, 10, 50);
         }
     }
     
@@ -75,9 +75,14 @@ $( window ).on( "load", function() {
         }
 
         draw() {
-            if(this.isSteeringLeft) ctx2.drawImage(this.carL,this.posX-10,this.posY-10,130,115.5);
-            else if(this.isSteeringRight) ctx2.drawImage(this.carR,this.posX-20,this.posY-20,130,115.5);
-            else ctx2.drawImage(this.car,this.posX,this.posY,100,85);
+            let carSize = Config.size/2;
+            let carSizeLR = carSize*1.41;
+            //left
+            if(this.isSteeringLeft) ctx2.drawImage(this.carL,this.posX-10,this.posY-10,carSizeLR,carSizeLR);
+            //right
+            else if(this.isSteeringRight) ctx2.drawImage(this.carR,this.posX-20,this.posY-10,carSizeLR,carSizeLR);
+            //forward
+            else ctx2.drawImage(this.car,this.posX,this.posY,carSize,carSize);
             
             
         
@@ -89,7 +94,6 @@ $( window ).on( "load", function() {
         }
         
         move(dirMove){
-            console.log(dirMove);
             if (dirMove == "left"){
                 this.isSteeringLeft = true;
             
@@ -124,16 +128,25 @@ $( window ).on( "load", function() {
     //track
     class Track {
         track = new Image();
-    
-        constructor (posX, posY, type) {
+        type;
+        lastX;
+
+        constructor (posX, posY, type, lastX) {
+            this.lastX = lastX;
+            this.type = type;
+            
             this.track.src = "img\\" + type + ".png";
             this.id = Math.random();
             this.posX = posX;
             this.posY = posY;
         }
         
-        draw() {
-            ctx2.drawImage(this.track,this.posX,this.posY,Config.size,Config.size);
+        draw() {console.log(this.lastX);
+            if (this.type == "roadL") ctx2.drawImage(this.track,this.posX+((this.lastX-1)*(Config.size)),this.posY,Config.size*2+20,Config.size);
+                
+            else if (this.type == "roadR") ctx2.drawImage(this.track,this.posX+(this.lastX*(Config.size)),this.posY,Config.size*2+20,Config.size);
+                
+            else ctx2.drawImage(this.track,this.posX+(this.lastX*(Config.size)),this.posY,Config.size,Config.size);
             /*ctx2.beginPath();
             ctx2.fillStyle = "red";
             ctx2.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
@@ -142,7 +155,7 @@ $( window ).on( "load", function() {
         }
         
         move(){
-            //this.posY+=Config.speed;
+            this.posY+=Config.speed;
         }
         
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
@@ -162,23 +175,31 @@ $( window ).on( "load", function() {
         trackList = new Array;
         
         constructor () {
-            this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*2,"road");
-            this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*1,"road");
-            this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*0,"road");
+            
+            for(let i = 600/Config.size; i >= 0; i--){
+                this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*i,0,"road");
+            }
         }
 
-        createTrack(x,y,typeRoad){
+        createTrack(x,y, lastX, typeRoad){
             let type = typeRoad;
+            
             if (!type) {
                 let r = Math.random();
+                //prevent from track appear too much left or right
+                if(lastX > ((600/Config.size))-2) r-=0.2;
+                if(lastX < -((600/Config.size))+2)r+=0.2;
+                    
                 if (r < 0.2) type = "roadL";
                 else if (r > 0.8) type = "roadR";
                 else type = "road";
             }
-            this.newTrack(x,y,type);
+            
+            if(!lastX) lastX=0;
+            this.newTrack(x,y,type,lastX);
         }
         
-        newTrack(posX, posY, type) {this.trackList.push(new Track(posX, posY, type))};
+        newTrack(posX, posY, type, lastX) {this.trackList.push(new Track(posX, posY, type, lastX))};
         
         draw() {
             this.trackList.forEach(e =>
@@ -194,9 +215,11 @@ $( window ).on( "load", function() {
         }
         
         checkNextTrackCondition(){
-            console.log(this.trackList[this.trackList.length-1].posY);
             if(this.trackList[this.trackList.length-1].posY > 0) {
-                this.createTrack((ctx2.canvas.width/2-Config.size/2),-Config.size+3);
+                let lastX = this.trackList[this.trackList.length-1].lastX;
+                if (this.trackList[this.trackList.length-1].type == "roadL")  lastX--;
+                if (this.trackList[this.trackList.length-1].type == "roadR") lastX++;
+                this.createTrack((ctx2.canvas.width/2-Config.size/2),-Config.size+3, lastX);
             }
         }
 
