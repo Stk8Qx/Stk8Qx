@@ -18,6 +18,13 @@ $( window ).on( "load", function() {
         
         bestScore: 0,
         score: 0,
+        
+        spaceBetweenBasedTrackPoint: 25,//
+        singleccelerationCurve: 1, // max change acceleration
+        maxAccelerationCurve: 3, //max curve radius
+        maxRadiusCurve: 45, // max maxAccelerationCurve multiply
+        roadWidthAsphalt: 50,
+        roadWidthBorder: 10,
     }
     
     //event listener
@@ -169,23 +176,29 @@ $( window ).on( "load", function() {
         }
     }
 
-    class BasedTrackPoint {
-        constructor (posX, posY, index) {
-            this.index = index;
-            
+    class Vector2 {
+        constructor(posX, posY, acceleration){
             this.posX = posX;
             this.posY = posY;
+            this.acceleration = acceleration;
+        }
+    }
+    
+    class BasedTrackPoint {
+        constructor (index, posX, posY, acceleration) {
+            this.index = index;
+            this.vector2 = new Vector2(posX, posY, acceleration);
         }
     }
 
-    class MeshPoint{
+    /*class ExtendedTrackPoint{
         constructor (posX, posY, index) {
             this.index = index;
             
             this.posX = posX;
             this.posY = posY;
         }
-    }
+    }*/
 
     class MeshTriangle{
         constructor (a, b, c) {
@@ -196,30 +209,152 @@ $( window ).on( "load", function() {
     }
     
     class Mesh {
+        basedTrackPointList = new Array; //center point of road
+        extendedTrackPointList = new Array;// points border out and border in
         triangleList = new Array;
 
-        constructor () {
+        constructor (basedTrackPointList, extendedTrackPointList) {
+            this.basedTrackPointList = basedTrackPointList;
+            this.extendedTrackPointList = extendedTrackPointList;
             
+            this.buildNewStart();
+        }
+        
+        buildNewStart(){
+            for(let i=0; i<(this.basedTrackPointList.length-1)*2; i++){//(trackManager.basedTrackPointList.length-1)*2  swap with 10
+                this.triangleLeftFromtriangleList(i);
+                this.triangleRightFromtriangleList(i+1);
+            }
+            
+            
+            console.log("triangle list");
+            console.log(this.triangleList.length);
+        }
+        
+        triangleLeftFromtriangleList(i){
+            let a = new Vector2(this.extendedTrackPointList[i].vector2.posX,this.extendedTrackPointList[i].vector2.posY);
+            let b = new Vector2(this.extendedTrackPointList[i+1].vector2.posX,this.extendedTrackPointList[i+1].vector2.posY);
+            let c = new Vector2(this.extendedTrackPointList[i+4].vector2.posX,this.extendedTrackPointList[i+4].vector2.posY);
+            this.newTriangle(a,b,c);
+        }
+        triangleRightFromtriangleList(i){
+            let a = new Vector2(this.extendedTrackPointList[i].vector2.posX,this.extendedTrackPointList[i].vector2.posY);
+            let b = new Vector2(this.extendedTrackPointList[i+3].vector2.posX,this.extendedTrackPointList[i+3].vector2.posY);
+            let c = new Vector2(this.extendedTrackPointList[i+4].vector2.posX,this.extendedTrackPointList[i+4].vector2.posY);
+            this.newTriangle(a,b,c);
         }
 
         newTriangle(a,b,c){this.triangleList.push(new MeshTriangle(a,b,c));}
+
+        draw(){
+            this.triangleList.forEach( e => this.drawTriangle(e))
+        }
+
+        drawTriangle(triangle){/*
+            console.log(345234526456233456);
+            console.log(triangle.a.posX);
+            console.log(triangle.a.posY);
+            console.log(triangle.b.posX);
+            console.log(triangle.b.posY);
+            console.log(triangle.c.posX);
+            console.log(triangle.c.posY);*/
+            
+            ctx2.beginPath();
+            ctx2.moveTo(triangle.a.posX, triangle.a.posY);
+            ctx2.lineTo(triangle.b.posX, triangle.b.posY);
+            ctx2.lineTo(triangle.c.posX, triangle.c.posY);
+            //ctx2.lineTo(triangle.a.posX, triangle.a.posY);
+            ctx2.closePath();
+            
+            // the outline
+            ctx2.lineWidth = 1;
+            ctx2.strokeStyle = '#000';
+            ctx2.stroke();
+
+            // the fill color
+            //ctx2.fillStyle = "#FFCC00";
+            //ctx2.fill();
+        }
     }
 
     //track manager
-    class TrackManager extends Mesh{
-        basedTrackPointList = new Array;
+    class TrackManager{ // extends Mesh
+        basedTrackPointList = new Array; //center point of road
+        extendedTrackPointList = new Array;// points border out and border in
         
         constructor () {
+            this.spaceBetweenBasedTrackPoint = Config.spaceBetweenBasedTrackPoint;
+            this.densityBasedTrackPoint = ctx2.canvas.height/this.spaceBetweenBasedTrackPoint;
             this.buildNewStart();
+            
+            
+            this.meshRoad = new Mesh(this.basedTrackPointList, this.extendedTrackPointList);
         }
 
         buildNewStart(){
-            for(let i = 600/Config.size; i >= 0; i--){
-                this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*i,0,"road");
+            //initial BasedTrackPoint then initial ExtendedTrackPoint
+            this.basedTrackPointList.push(new BasedTrackPoint(0, ctx2.canvas.width/2, ctx2.canvas.height, 0));
+            this.newBasedTrackPoint();
+            
+            for(let i = 0; i <= this.densityBasedTrackPoint; i++){
+                this.newBasedTrackPoint();
+                this.newExtendedTrackPoint(i); 
             }
+                
+            console.log("base point");
+            console.log(this.basedTrackPointList.length);
+            console.log("extended point");
+            console.log(this.extendedTrackPointList.length);
         }
 
-        createTrack(x,y, lastX, typeRoad){
+        newBasedTrackPoint() {
+                
+            let prev = this.basedTrackPointList[this.basedTrackPointList.length-1];
+            let rand = Math.round((Math.random() * 2 * Config.singleccelerationCurve) - 1)
+            let acceleration = prev.vector2.acceleration + rand;
+
+               
+            //clamp acceleration between Config.maxAccelerationCurve
+            if (acceleration > Config.maxAccelerationCurve) acceleration = Config.maxAccelerationCurve;
+            else if (acceleration < -Config.maxAccelerationCurve) acceleration = -Config.maxAccelerationCurve;
+            this.basedTrackPointList.push(new BasedTrackPoint(
+                prev.index+1, //index
+                (prev.vector2.posX + (acceleration * Config.maxRadiusCurve / this.spaceBetweenBasedTrackPoint)),//posX
+                prev.vector2.posY - this.spaceBetweenBasedTrackPoint,//posY
+                acceleration));
+        };
+        
+        newExtendedTrackPoint(basedTrackPointIndex){
+            let index = this.extendedTrackPointList.length
+            let base = this.basedTrackPointList[basedTrackPointIndex].vector2;
+            //console.log(base.posY);
+            //left border out
+            this.extendedTrackPointList.push(new BasedTrackPoint(
+                basedTrackPointIndex.index,
+                base.posX -= Config.roadWidthBorder + Config.roadWidthAsphalt,
+                base.posY,
+                0));
+            //left border in
+            this.extendedTrackPointList.push(new BasedTrackPoint(
+                basedTrackPointIndex.index+1,
+                base.posX -= Config.roadWidthAsphalt,
+                base.posY,
+                0));
+            //right border in
+            this.extendedTrackPointList.push(new BasedTrackPoint(
+                basedTrackPointIndex.index+2,
+                base.posX += Config.roadWidthAsphalt,
+                base.posY,
+                0));
+            //right border out
+            this.extendedTrackPointList.push(new BasedTrackPoint(
+                basedTrackPointIndex.index+3,
+                base.posX += Config.roadWidthBorder + Config.roadWidthAsphalt,
+                base.posY,
+                0));
+        }
+
+        /*createTrack(x,y, lastX, typeRoad){
             let type = typeRoad;
             
             if (!type) {
@@ -235,33 +370,31 @@ $( window ).on( "load", function() {
             
             if(!lastX) lastX=0;
             this.newTrack(x,y,type,lastX);
-        }
-        
-        newBasedTrackPoint(posX, posY) {this.basedTrackPointList.push(new Track(posX, posY))};
-        
-        draw() {
+        }*/
+
+        /*draw() {
             this.trackList.forEach(e =>
                 e.draw()                   
             ); 
-        }
+        }*/
     
-        physicUpdate(){
+        /*physicUpdate(){
             this.trackList.forEach(e =>
                 e.move()                   
             );
             this.checkNextTrackCondition();
-        }
+        }*/
         
-        checkNextTrackCondition(){
+        /*checkNextTrackCondition(){
             if(this.trackList[this.trackList.length-1].posY > 0) {
                 let lastX = this.trackList[this.trackList.length-1].lastX;
                 if (this.trackList[this.trackList.length-1].type == "roadL")  lastX--;
                 if (this.trackList[this.trackList.length-1].type == "roadR") lastX++;
                 this.createTrack((ctx2.canvas.width/2-Config.size/2),-Config.size+3, lastX);
             }
-        }
+        }*/
 
-        checkCollision() {
+        /*checkCollision() {
             var isDetected = false;
             this.trackList.forEach(function(e){
                 if (e.posY > 270 && e.posY < 470){ //player y = 370
@@ -272,31 +405,12 @@ $( window ).on( "load", function() {
                 }
             }); 
             return isDetected
-            /*var isDetected = false;
-            this.trackList.forEach(function(e){
-                if(e.checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius)){
-                    
-                    isDetected = true;
-                    return isDetected;
-                }
-            }); 
-            return isDetected;*/
-        }
+        }*/
 
         //remove obj form array enemiesList and add score/level
-        destroyTrack(){
-            //console.log(enemy.id);
-            //var index = this.trackList.findIndex((e => e === track));
+        /*destroyTrack(){
             this.trackList.splice(0);
-            /*delete bullet.speed;
-            delete bullet.posX;
-            delete bullet.posY;
-            delete bullet.radius;
-            console.log(bullet);*/
-            /*if (this.trackList.length == 0) {
-                gameManager.levelComplete();
-            }*/
-        }
+        }*/
         
     }
 
@@ -344,15 +458,16 @@ $( window ).on( "load", function() {
     function draw(){
         ctx2.clearRect(0, 0, 800, 600);
         
-        trackManager.draw();
+        //trackManager.draw();
+        trackManager.meshRoad.draw();
         player.draw();
         hud.draw();
     }
 
     function physicUpdate(){
         player.moveUpdate();
-        trackManager.physicUpdate();
-        gameManager.gameoverstatment();
+        //trackManager.physicUpdate();
+        //gameManager.gameoverstatment();
     }
     //instance single object class player bulletsManager enemiesManager hud
     const player = new Player (355, 370);
