@@ -12,7 +12,6 @@ $( window ).on( "load", function() {
         moveRight: 68,
         moveLeftAlt: 37,
         moveRightAlt: 39,
-        shoot: 32,
         
         bestScore: 1,
         score: 0,
@@ -25,9 +24,6 @@ $( window ).on( "load", function() {
         }
         if(e.keyCode==Config.moveRight  || e.keyCode==Config.moveRightAlt){
             player.move("right");
-        }
-        if(e.keyCode==Config.shoot){
-            player.shoot();
         }
         
     }, false);
@@ -75,19 +71,22 @@ $( window ).on( "load", function() {
 
     //track
     class Track {
-        constructor (posX, posY, radius) {
+        track = new Image();
+    
+        constructor (posX, posY, type) {
+            this.track.src = "img\\" + type + ".png";
             this.id = Math.random();
             this.posX = posX;
             this.posY = posY;
-            this.radius = radius;
         }
         
         draw() {
-            ctx2.beginPath();
+            ctx2.drawImage(this.track,0,0);
+            /*ctx2.beginPath();
             ctx2.fillStyle = "red";
             ctx2.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
             ctx2.fill();
-            ctx2.closePath();
+            ctx2.closePath();*/
         }
         
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
@@ -104,58 +103,56 @@ $( window ).on( "load", function() {
 
     //track manager
     class TrackManager {
-        enemiesList = new Array;
+        trackList = new Array;
         
-        constructor (rows,columns) {
-            this.createEnemies(rows,columns);
+        constructor () {
+            this.createTrack();
         }
 
-        createEnemies(rows,columns){
-            for(var i=0;i<columns;i++){
-                for(var j=0;j<rows;j++){
-                    //TODO make postion for new enemies more flexible (fit) to screen
-                    this.newEnemy(110+i*(Config.enemySize+85),
-                                  100+j*(Config.enemySize+55),
-                                  Config.enemySize);
-                }
-            }
+        createTrack(){
+            let type;
+            let r = Math.random();
+            if (r < 0.2) type = "roadL";
+            else if (r > 0.8) type = "roadR";
+            else type = "road";
+            this.newTrack(250,300,type);
         }
         
-        newEnemy(posX, posY, radius) {this.enemiesList.push(new Enemy(posX, posY, radius))};
-        enemiesLists() {console.log(this.enemiesList)}; // TODO remove, only for debug
+        newTrack(posX, posY, type) {this.trackList.push(new Track(posX, posY, type))};
         
         draw() {
-            this.enemiesList.forEach(e =>
+            this.trackList.forEach(e =>
                 e.draw()                   
             ); 
         }
     
         physicUpdate(){
+            
         }
         
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
-            var isDetected = false;
-            this.enemiesList.forEach(function(e){
+            /*var isDetected = false;
+            this.trackList.forEach(function(e){
                 if(e.checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius)){
                     
                     isDetected = true;
                     return isDetected;
                 }
             }); 
-            return isDetected;
+            return isDetected;*/
         }
 
         //remove obj form array enemiesList and add score/level
-        destroyEnemy(enemy){
+        destroyTrack(track){
             //console.log(enemy.id);
-            var index = this.enemiesList.findIndex((e => e === enemy));
-            this.enemiesList.splice(index,1);
+            var index = this.trackList.findIndex((e => e === track));
+            this.trackList.splice(index,1);
             /*delete bullet.speed;
             delete bullet.posX;
             delete bullet.posY;
             delete bullet.radius;
             console.log(bullet);*/
-            if (this.enemiesList.length == 0) {
+            if (this.trackList.length == 0) {
                 gameManager.levelComplete();
             }
         }
@@ -197,20 +194,18 @@ $( window ).on( "load", function() {
         ctx2.clearRect(0, 0, 800, 600);
         
         player.draw();
-        enemiesManager.draw();
-        bulletsManager.draw();
+        trackManager.draw();
         hud.draw();
     }
 
     function physicUpdate(){
         /*player.draw();
         enemy.draw();*/
-        bulletsManager.physicUpdate();
+        //bulletsManager.physicUpdate();
     }
     //instance single object class player bulletsManager enemiesManager hud
-    const player = new Player (390, 550, 20, 40);
-    const bulletsManager = new BulletsManager ();
-    const enemiesManager = new EnemiesManager (Config.enemyColumn, Config.enemyRow);
+    const player = new Player (390, 550);
+    const trackManager = new TrackManager ();
     const hud = new HUD ();
     const gameManager = new GameManager ();
 
