@@ -8,7 +8,7 @@ $( window ).on( "load", function() {
         frameUpdate: 10,
         physicUpdate: 10,
         
-        size: 200,
+        size: 300,
         speed: 2,
         
         moveLeft: 65,
@@ -60,8 +60,11 @@ $( window ).on( "load", function() {
         car = new Image();
         carL = new Image();
         carR = new Image();
+    
         isSteeringLeft = false;
         isSteeringRight = false;
+    
+        acceleration = 0;
     
         constructor (posX, posY, sizeX, sizeY) {
             this.car.src = "img\\car.png";
@@ -72,9 +75,9 @@ $( window ).on( "load", function() {
         }
 
         draw() {
-            if(this.isSteeringLeft) ctx2.drawImage(this.carL,this.posX,this.posY,200,170);
-            else if(this.isSteeringRight) ctx2.drawImage(this.carR,this.posX,this.posY,200,170);
-            else ctx2.drawImage(this.car,this.posX,this.posY,200,170);
+            if(this.isSteeringLeft) ctx2.drawImage(this.carL,this.posX-10,this.posY-10,130,115.5);
+            else if(this.isSteeringRight) ctx2.drawImage(this.carR,this.posX-20,this.posY-20,130,115.5);
+            else ctx2.drawImage(this.car,this.posX,this.posY,100,85);
             
             
         
@@ -88,21 +91,33 @@ $( window ).on( "load", function() {
         move(dirMove){
             console.log(dirMove);
             if (dirMove == "left"){
-                if(this.posX>=0+20) this.posX -= 10;
                 this.isSteeringLeft = true;
             
             } else if (dirMove == "right") {
-                if(this.posX<=ctx2.canvas.width-20) this.posX += 10;
                 this.isSteeringRight = true;
                 
             } else if (dirMove == "up") {
                 this.isSteeringLeft = false;
                 this.isSteeringRight = false;
             }
+            
         }
     
         moveUpdate(){
+            if (this.isSteeringRight) this.acceleration += 1;
+            if (this.isSteeringLeft) this.acceleration -= 1;
             
+            let max = 5;
+            if(this.acceleration>max) this.acceleration = max;
+            if(this.acceleration<-max) this.acceleration = -max;
+            
+            let c =0.5;
+            this.posX += this.acceleration;
+            if(this.acceleration>c) this.acceleration -= c;
+            else if(this.acceleration<-c) this.acceleration += c;
+            else this.acceleration = 0;
+            /*if(this.posX>=0+20) this.posX = acceleration;
+            if(this.posX<=ctx2.canvas.width-20) this.posX += 10;*/
         }
     }
 
@@ -127,7 +142,7 @@ $( window ).on( "load", function() {
         }
         
         move(){
-            this.posY+=Config.speed;
+            //this.posY+=Config.speed;
         }
         
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
