@@ -222,7 +222,11 @@ $( window ).on( "load", function() {
         
         buildNewStart(){
             for(let i=0; i<(this.extendedTrackPointList.length-4); i+=2){//(trackManager.basedTrackPointList.length-1)*2  swap with 10
-                //TODO ERROR
+                //road
+                if (i>0&&i%4==2)this.triangleLeftFromtriangleList(i-1);
+                if (i>0&&i%4==2)this.triangleRightFromtriangleList(i);
+                
+                //border
                 this.triangleLeftFromtriangleList(i);
                 this.triangleRightFromtriangleList(i+1);
             }
@@ -251,14 +255,7 @@ $( window ).on( "load", function() {
             this.triangleList.forEach(this.drawTriangle);
         }
 
-        drawTriangle(triangle,color){/*
-            console.log(345234526456233456);
-            console.log(triangle.a.posX);
-            console.log(triangle.a.posY);
-            console.log(triangle.b.posX);
-            console.log(triangle.b.posY);
-            console.log(triangle.c.posX);
-            console.log(triangle.c.posY);*/
+        drawTriangle(triangle,color){
             
             ctx2.beginPath();
             ctx2.moveTo(triangle.a.posX, triangle.a.posY);
@@ -273,8 +270,9 @@ $( window ).on( "load", function() {
             ctx2.stroke();*/
 
             // the fill color
-            if(color%8==0) color = "#FFCC00";
-            if(color%8==4) color = "#ff0000";
+            if(color%12==0||color%12==4) color = "#FFCC00";
+            if(color%12==2||color%12==8) color = "#000";
+            if(color%12==6||color%12==10) color = "#ff0000";
             ctx2.fillStyle = color;
             ctx2.fill();
         }
@@ -291,6 +289,7 @@ $( window ).on( "load", function() {
             this.buildNewStart();
             
             
+            this.meshBorder = new Mesh(this.basedTrackPointList, this.extendedTrackPointList);
             this.meshRoad = new Mesh(this.basedTrackPointList, this.extendedTrackPointList);
         }
 
