@@ -20,3 +20,9 @@ body {
     margin: 0 auto;
 /*    position: absolute; left: 0; top: 0;*/
 }
+
+#camera {
+    background-color: lightgreen;
+    margin: 0 auto;
+/*    position: absolute; left: 0; top: 0;*/
+}

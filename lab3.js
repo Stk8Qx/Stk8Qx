@@ -21,8 +21,8 @@ $( window ).on( "load", function() {
         
         spaceBetweenBasedTrackPoint: 25,//
         singleccelerationCurve: 1, // max change acceleration
-        maxAccelerationCurve: 5, //max curve radius
-        maxRadiusCurve: 90, // max maxAccelerationCurve multiply
+        maxAccelerationCurve: 8, //max curve radius
+        maxRadiusCurve: 45, // max maxAccelerationCurve multiply
         roadWidthAsphalt: 90,
         roadWidthBorder: 14,
     }
@@ -127,54 +127,22 @@ $( window ).on( "load", function() {
             if(this.acceleration>c) this.acceleration -= c;
             else if(this.acceleration<-c) this.acceleration += c;
             else this.acceleration = 0;
+            //this.posY-=4;
             /*if(this.posX>=0+20) this.posX = acceleration;
             if(this.posX<=ctx2.canvas.width-20) this.posX += 10;*/
         }
     }
 
-    //track
-    class Track {
-        track = new Image();
-        type;
-        lastX;
-
-        constructor (posX, posY, type, lastX) {
-            this.lastX = lastX;
-            this.type = type;
-            
-            this.track.src = "img\\" + type + ".png";
-            this.id = Math.random();
+    class Camera{
+        constructor (posX, posY) {
             this.posX = posX;
             this.posY = posY;
         }
-        
-        draw() {
-                //left
-            if (this.type == "roadL") ctx2.drawImage(this.track,this.posX+((this.lastX-1)*(Config.size)),this.posY,Config.size*2+20,Config.size);
-                //right
-            else if (this.type == "roadR") ctx2.drawImage(this.track,this.posX+(this.lastX*(Config.size)),this.posY,Config.size*2+20,Config.size);
-                //forward
-            else ctx2.drawImage(this.track,this.posX+(this.lastX*(Config.size)),this.posY,Config.size,Config.size);
-            /*ctx2.beginPath();
-            ctx2.fillStyle = "red";
-            ctx2.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
-            ctx2.fill();
-            ctx2.closePath();*/
+
+        update(deltaY){
+            this.posY += deltaY;
         }
-        
-        move(){
-            this.posY+=Config.speed;
-        }
-        
-        checkCollision() {
-            
-            if (player.posX < this.posX+(this.lastX)*(Config.size) || (player.posX+20) > (this.posX+(this.lastX)*(Config.size)+100)){
-                return true;
-            }
-            
-            else return false;
-        }
-    }
+     }
 
     class Vector2 {
         constructor(posX, posY, acceleration){
@@ -258,9 +226,9 @@ $( window ).on( "load", function() {
         drawTriangle(triangle,color){
             
             ctx2.beginPath();
-            ctx2.moveTo(triangle.a.posX, triangle.a.posY);
-            ctx2.lineTo(triangle.b.posX, triangle.b.posY);
-            ctx2.lineTo(triangle.c.posX, triangle.c.posY);
+            ctx2.moveTo(triangle.a.posX+camera.posX, triangle.a.posY+camera.posY);
+            ctx2.lineTo(triangle.b.posX+camera.posX, triangle.b.posY+camera.posY);
+            ctx2.lineTo(triangle.c.posX+camera.posX, triangle.c.posY+camera.posY);
             //ctx2.lineTo(triangle.a.posX, triangle.a.posY);
             ctx2.closePath();
             
@@ -467,12 +435,14 @@ $( window ).on( "load", function() {
     }
 
     function physicUpdate(){
+        camera.update(2);
         player.moveUpdate();
         //trackManager.physicUpdate();
         //gameManager.gameoverstatment();
     }
     //instance single object class player bulletsManager enemiesManager hud
     const player = new Player (355, 370);
+    const camera = new Camera (0, 0);
     const trackManager = new TrackManager ();
     const hud = new HUD ();
     const gameManager = new GameManager ();
