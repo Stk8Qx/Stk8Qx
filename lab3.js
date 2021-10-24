@@ -169,12 +169,47 @@ $( window ).on( "load", function() {
         }
     }
 
-    //track manager
-    class TrackManager {
-        trackList = new Array;
-        
+    class BasedTrackPoint {
+        constructor (posX, posY, index) {
+            this.index = index;
+            
+            this.posX = posX;
+            this.posY = posY;
+        }
+    }
+
+    class MeshPoint{
+        constructor (posX, posY, index) {
+            this.index = index;
+            
+            this.posX = posX;
+            this.posY = posY;
+        }
+    }
+
+    class MeshTriangle{
+        constructor (a, b, c) {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+    }
+    
+    class Mesh {
+        triangleList = new Array;
+
         constructor () {
             
+        }
+
+        newTriangle(a,b,c){this.triangleList.push(new MeshTriangle(a,b,c));}
+    }
+
+    //track manager
+    class TrackManager extends Mesh{
+        basedTrackPointList = new Array;
+        
+        constructor () {
             this.buildNewStart();
         }
 
@@ -202,7 +237,7 @@ $( window ).on( "load", function() {
             this.newTrack(x,y,type,lastX);
         }
         
-        newTrack(posX, posY, type, lastX) {this.trackList.push(new Track(posX, posY, type, lastX))};
+        newBasedTrackPoint(posX, posY) {this.basedTrackPointList.push(new Track(posX, posY))};
         
         draw() {
             this.trackList.forEach(e =>
@@ -264,7 +299,8 @@ $( window ).on( "load", function() {
         }
         
     }
-               
+
+    
     class GameManager{
         
         constructor () {
