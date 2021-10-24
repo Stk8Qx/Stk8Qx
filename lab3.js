@@ -266,7 +266,7 @@ $( window ).on( "load", function() {
             this.basedTrackPointList.push(new BasedTrackPoint(0, ctx2.canvas.width/2, ctx2.canvas.height, 0));
             this.newBasedTrackPoint();
             
-            for(let i = 0; i <= this.densityBasedTrackPoint; i++){
+            for(let i = 0; i <= this.densityBasedTrackPoint*100; i++){
                 this.newBasedTrackPoint();
                 this.newExtendedTrackPoint(i); 
             }
@@ -287,9 +287,15 @@ $( window ).on( "load", function() {
             //clamp acceleration between Config.maxAccelerationCurve
             if (acceleration > Config.maxAccelerationCurve) acceleration = Config.maxAccelerationCurve;
             else if (acceleration < -Config.maxAccelerationCurve) acceleration = -Config.maxAccelerationCurve;
+            
+            let calcX = (prev.vector2.posX + (acceleration * Config.maxRadiusCurve / this.spaceBetweenBasedTrackPoint));
+            //dont let generate road on lefrt/right of render area
+            if (calcX+Config.roadWidthAsphalt+Config.roadWidthBorder>ctx2.canvas.width) {calcX = prev.vector2.posX;acceleration=0}
+            if (calcX-Config.roadWidthAsphalt-Config.roadWidthBorder<0) {calcX = prev.vector2.posX;acceleration=0}
+            
             this.basedTrackPointList.push(new BasedTrackPoint(
                 prev.index+1, //index
-                (prev.vector2.posX + (acceleration * Config.maxRadiusCurve / this.spaceBetweenBasedTrackPoint)),//posX
+                calcX,//posX
                 prev.vector2.posY - this.spaceBetweenBasedTrackPoint,//posY
                 acceleration));
         };
