@@ -123,6 +123,10 @@ $( window ).on( "load", function() {
             ctx2.closePath();*/
         }
         
+        move(){
+            this.posY++;
+        }
+        
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
             var distanceBetween = Math.sqrt(Math.pow((this.posX - bulletPosX),2) + Math.pow((this.posY - bulletPosY),2))
             var sumOfRadius = this.radius + bulletRadius;
@@ -140,16 +144,19 @@ $( window ).on( "load", function() {
         trackList = new Array;
         
         constructor () {
-            this.createTrack();
+            this.createTrack(180,120,"road");
+            this.createTrack(180,-372);
         }
 
-        createTrack(){
-            let type;
-            let r = Math.random();
-            if (r < 0.2) type = "roadL";
-            else if (r > 0.8) type = "roadR";
-            else type = "road";
-            this.newTrack(180,120,type);
+        createTrack(x,y,typeRoad){
+            let type = typeRoad;
+            if (!type) {
+                let r = Math.random();
+                if (r < 0.2) type = "roadL";
+                else if (r > 0.8) type = "roadR";
+                else type = "road";
+            }
+            this.newTrack(x,y,type);
         }
         
         newTrack(posX, posY, type) {this.trackList.push(new Track(posX, posY, type))};
@@ -161,8 +168,15 @@ $( window ).on( "load", function() {
         }
     
         physicUpdate(){
+            this.trackList.forEach(e =>
+                e.move()                   
+            ); this.checkNextTrackCondition();
         }
         
+        checkNextTrackCondition(){
+            console.log(this.trackList[this.trackList.length-1].posY);
+        }
+
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
             /*var isDetected = false;
             this.trackList.forEach(function(e){
@@ -233,6 +247,7 @@ $( window ).on( "load", function() {
 
     function physicUpdate(){
         player.moveUpdate();
+        trackManager.physicUpdate();
         /*player.draw();
         enemy.draw();*/
         //bulletsManager.physicUpdate();
