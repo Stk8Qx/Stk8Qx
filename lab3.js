@@ -8,6 +8,9 @@ $( window ).on( "load", function() {
         frameUpdate: 10,
         physicUpdate: 10,
         
+        size: 200,
+        speed: 2,
+        
         moveLeft: 65,
         moveRight: 68,
         moveLeftAlt: 37,
@@ -115,7 +118,7 @@ $( window ).on( "load", function() {
         }
         
         draw() {
-            ctx2.drawImage(this.track,this.posX,this.posY);
+            ctx2.drawImage(this.track,this.posX,this.posY,Config.size,Config.size);
             /*ctx2.beginPath();
             ctx2.fillStyle = "red";
             ctx2.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
@@ -124,7 +127,7 @@ $( window ).on( "load", function() {
         }
         
         move(){
-            this.posY++;
+            this.posY+=Config.speed;
         }
         
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
@@ -144,8 +147,9 @@ $( window ).on( "load", function() {
         trackList = new Array;
         
         constructor () {
-            this.createTrack(180,120,"road");
-            this.createTrack(180,-372);
+            this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*2,"road");
+            this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*1,"road");
+            this.createTrack((ctx2.canvas.width/2-Config.size/2),Config.size*0,"road");
         }
 
         createTrack(x,y,typeRoad){
@@ -170,11 +174,15 @@ $( window ).on( "load", function() {
         physicUpdate(){
             this.trackList.forEach(e =>
                 e.move()                   
-            ); this.checkNextTrackCondition();
+            );
+            this.checkNextTrackCondition();
         }
         
         checkNextTrackCondition(){
             console.log(this.trackList[this.trackList.length-1].posY);
+            if(this.trackList[this.trackList.length-1].posY > 0) {
+                this.createTrack((ctx2.canvas.width/2-Config.size/2),-Config.size+3);
+            }
         }
 
         checkCollisionCircle(bulletPosX, bulletPosY, bulletRadius) {
