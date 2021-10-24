@@ -21,10 +21,10 @@ $( window ).on( "load", function() {
         
         spaceBetweenBasedTrackPoint: 25,//
         singleccelerationCurve: 1, // max change acceleration
-        maxAccelerationCurve: 3, //max curve radius
-        maxRadiusCurve: 45, // max maxAccelerationCurve multiply
-        roadWidthAsphalt: 50,
-        roadWidthBorder: 10,
+        maxAccelerationCurve: 5, //max curve radius
+        maxRadiusCurve: 90, // max maxAccelerationCurve multiply
+        roadWidthAsphalt: 90,
+        roadWidthBorder: 14,
     }
     
     //event listener
@@ -221,7 +221,8 @@ $( window ).on( "load", function() {
         }
         
         buildNewStart(){
-            for(let i=0; i<(this.basedTrackPointList.length-1)*2; i++){//(trackManager.basedTrackPointList.length-1)*2  swap with 10
+            for(let i=0; i<(this.extendedTrackPointList.length-4); i+=2){//(trackManager.basedTrackPointList.length-1)*2  swap with 10
+                //TODO ERROR
                 this.triangleLeftFromtriangleList(i);
                 this.triangleRightFromtriangleList(i+1);
             }
@@ -247,10 +248,10 @@ $( window ).on( "load", function() {
         newTriangle(a,b,c){this.triangleList.push(new MeshTriangle(a,b,c));}
 
         draw(){
-            this.triangleList.forEach( e => this.drawTriangle(e))
+            this.triangleList.forEach(this.drawTriangle);
         }
 
-        drawTriangle(triangle){/*
+        drawTriangle(triangle,color){/*
             console.log(345234526456233456);
             console.log(triangle.a.posX);
             console.log(triangle.a.posY);
@@ -267,13 +268,15 @@ $( window ).on( "load", function() {
             ctx2.closePath();
             
             // the outline
-            ctx2.lineWidth = 1;
+            /*ctx2.lineWidth = 1;
             ctx2.strokeStyle = '#000';
-            ctx2.stroke();
+            ctx2.stroke();*/
 
             // the fill color
-            //ctx2.fillStyle = "#FFCC00";
-            //ctx2.fill();
+            if(color%8==0) color = "#FFCC00";
+            if(color%8==4) color = "#ff0000";
+            ctx2.fillStyle = color;
+            ctx2.fill();
         }
     }
 
@@ -327,29 +330,29 @@ $( window ).on( "load", function() {
         newExtendedTrackPoint(basedTrackPointIndex){
             let index = this.extendedTrackPointList.length
             let base = this.basedTrackPointList[basedTrackPointIndex].vector2;
-            //console.log(base.posY);
+            
             //left border out
             this.extendedTrackPointList.push(new BasedTrackPoint(
                 basedTrackPointIndex.index,
-                base.posX -= Config.roadWidthBorder + Config.roadWidthAsphalt,
+                base.posX - Config.roadWidthBorder - Config.roadWidthAsphalt,
                 base.posY,
                 0));
             //left border in
             this.extendedTrackPointList.push(new BasedTrackPoint(
                 basedTrackPointIndex.index+1,
-                base.posX -= Config.roadWidthAsphalt,
+                base.posX - Config.roadWidthAsphalt,
                 base.posY,
                 0));
             //right border in
             this.extendedTrackPointList.push(new BasedTrackPoint(
                 basedTrackPointIndex.index+2,
-                base.posX += Config.roadWidthAsphalt,
+                base.posX + Config.roadWidthAsphalt,
                 base.posY,
                 0));
             //right border out
             this.extendedTrackPointList.push(new BasedTrackPoint(
                 basedTrackPointIndex.index+3,
-                base.posX += Config.roadWidthBorder + Config.roadWidthAsphalt,
+                base.posX + Config.roadWidthBorder + Config.roadWidthAsphalt,
                 base.posY,
                 0));
         }
