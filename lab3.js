@@ -371,7 +371,7 @@ $( window ).on( "load", function() {
         
         scoreUp() {
             Config.score += 10;
-            if (Config.score % 10 == 0) {
+            if (Config.score % 100 == 0) {
                 gameManager.levelUp();
             }
         }
