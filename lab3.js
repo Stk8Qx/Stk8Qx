@@ -9,7 +9,6 @@ $( window ).on( "load", function() {
         physicUpdate: 10,
         
         size: 100,
-        speed: 2,
         
         moveLeft: 65,
         moveRight: 68,
@@ -18,13 +17,18 @@ $( window ).on( "load", function() {
         
         bestScore: 0,
         score: 0,
+        level: 1,
         
         spaceBetweenBasedTrackPoint: 25,//
         singleccelerationCurve: 1, // max change acceleration
         maxAccelerationCurve: 8, //max curve radius
         maxRadiusCurve: 45, // max maxAccelerationCurve multiply
-        roadWidthAsphalt: 90,
-        roadWidthBorder: 14,
+        roadWidthAsphaltmin: 40,
+        roadWidthAsphaltmax: 160,
+        roadWidthAsphalt: 160,
+        roadWidthBorder: 10,
+        
+        tick: 0,
     }
     
     //event listener
@@ -57,8 +61,8 @@ $( window ).on( "load", function() {
         draw() {
             ctx2.font = "24px Arial";
             ctx2.fillStyle = "white";   
-            ctx2.fillText(" Score:   "+Config.score, 10, 25);
-            //ctx2.fillText("Best Score:   "+Config.bestScore, 10, 50);
+            ctx2.fillText("Score:   "+Config.score, 10, 25);
+            ctx2.fillText("Level:   "+Config.level, 10, 50);
         }
     }
     
@@ -115,14 +119,14 @@ $( window ).on( "load", function() {
         }
     
         moveUpdate(){
-            if (this.isSteeringRight) this.acceleration += 1;
-            if (this.isSteeringLeft) this.acceleration -= 1;
+            if (this.isSteeringRight) this.acceleration += 3;
+            if (this.isSteeringLeft) this.acceleration -= 3;
             
-            let max = 1;
+            let max = 8;
             if(this.acceleration>max) this.acceleration = max;
             if(this.acceleration<-max) this.acceleration = -max;
             
-            let c =0.3;
+            let c =1;
             this.posX += this.acceleration;
             if(this.acceleration>c) this.acceleration -= c;
             else if(this.acceleration<-c) this.acceleration += c;
@@ -184,7 +188,7 @@ $( window ).on( "load", function() {
         constructor (basedTrackPointList, extendedTrackPointList) {
             this.basedTrackPointList = basedTrackPointList;
             this.extendedTrackPointList = extendedTrackPointList;
-            
+            //console.log(this.extendedTrackPointList.length);
             this.buildNewStart();
         }
         
@@ -193,15 +197,11 @@ $( window ).on( "load", function() {
                 //road
                 if (i>0&&i%4==2)this.triangleLeftFromtriangleList(i-1);
                 if (i>0&&i%4==2)this.triangleRightFromtriangleList(i);
-                
+            
                 //border
                 this.triangleLeftFromtriangleList(i);
                 this.triangleRightFromtriangleList(i+1);
             }
-            
-            
-            console.log("triangle list");
-            console.log(this.triangleList.length);
         }
         
         triangleLeftFromtriangleList(i){
@@ -256,25 +256,22 @@ $( window ).on( "load", function() {
             this.densityBasedTrackPoint = ctx2.canvas.height/this.spaceBetweenBasedTrackPoint;
             this.buildNewStart();
             
-            
-            this.meshBorder = new Mesh(this.basedTrackPointList, this.extendedTrackPointList);
-            this.meshRoad = new Mesh(this.basedTrackPointList, this.extendedTrackPointList);
         }
 
         buildNewStart(){
+            
+            //this.meshRoad = new Mesh(this.basedTrackPointList, this.extendedTrackPointList);
             //initial BasedTrackPoint then initial ExtendedTrackPoint
             this.basedTrackPointList.push(new BasedTrackPoint(0, ctx2.canvas.width/2, ctx2.canvas.height, 0));
             this.newBasedTrackPoint();
-            
+            Config.tick=0;
             for(let i = 0; i <= this.densityBasedTrackPoint*100; i++){
                 this.newBasedTrackPoint();
                 this.newExtendedTrackPoint(i); 
             }
-                
-            console.log("base point");
-            console.log(this.basedTrackPointList.length);
-            console.log("extended point");
-            console.log(this.extendedTrackPointList.length);
+            //mesh
+            this.meshRoad = new Mesh(this.basedTrackPointList, this.extendedTrackPointList);
+            
         }
 
         newBasedTrackPoint() {
@@ -293,15 +290,25 @@ $( window ).on( "load", function() {
             if (calcX+Config.roadWidthAsphalt+Config.roadWidthBorder>ctx2.canvas.width) {calcX = prev.vector2.posX;acceleration=0}
             if (calcX-Config.roadWidthAsphalt-Config.roadWidthBorder<0) {calcX = prev.vector2.posX;acceleration=0}
             
+            //first fe block acc = 0
+            //console.log(this.basedTrackPointList.length);
+            if(Config.tick<this.densityBasedTrackPoint*2) {
+                //console.log(Config.tick);
+                //calcX=390;
+                //Config.tick++;
+                //acceleration=0;
+            }//calcX = 400;
+            
             this.basedTrackPointList.push(new BasedTrackPoint(
                 prev.index+1, //index
                 calcX,//posX
                 prev.vector2.posY - this.spaceBetweenBasedTrackPoint,//posY
                 acceleration));
+            //if(Config.tick == 1) player.posX = calcX;
         };
         
         newExtendedTrackPoint(basedTrackPointIndex){
-            let index = this.extendedTrackPointList.length
+            let index = this.extendedTrackPointList.length;
             let base = this.basedTrackPointList[basedTrackPointIndex].vector2;
             
             //left border out
@@ -330,74 +337,23 @@ $( window ).on( "load", function() {
                 0));
         }
 
-        /*createTrack(x,y, lastX, typeRoad){
-            let type = typeRoad;
-            
-            if (!type) {
-                let r = Math.random();
-                //prevent from track appear too much left or right
-                if(lastX > ((600/Config.size))-4) r-=0.2;
-                if(lastX < -((600/Config.size))+4)r+=0.2;
-                    
-                if (r < 0.2) type = "roadL";
-                else if (r > 0.8) type = "roadR";
-                else type = "road";
-            }
-            
-            if(!lastX) lastX=0;
-            this.newTrack(x,y,type,lastX);
-        }*/
+        destroyTrack(){
+            this.basedTrackPointList.splice(0);
+            this.extendedTrackPointList.splice(0);
+        }
 
-        /*draw() {
-            this.trackList.forEach(e =>
-                e.draw()                   
-            ); 
-        }*/
-    
-        /*physicUpdate(){
-            this.trackList.forEach(e =>
-                e.move()                   
-            );
-            this.checkNextTrackCondition();
-        }*/
-        
-        /*checkNextTrackCondition(){
-            if(this.trackList[this.trackList.length-1].posY > 0) {
-                let lastX = this.trackList[this.trackList.length-1].lastX;
-                if (this.trackList[this.trackList.length-1].type == "roadL")  lastX--;
-                if (this.trackList[this.trackList.length-1].type == "roadR") lastX++;
-                this.createTrack((ctx2.canvas.width/2-Config.size/2),-Config.size+3, lastX);
-            }
-        }*/
-
-        /*checkCollision() {
-            var isDetected = false;
-            this.trackList.forEach(function(e){
-                if (e.posY > 270 && e.posY < 470){ //player y = 370
-                    if(e.checkCollision()){
-                        isDetected = true;
-                        return isDetected;
-                    }
-                }
-            }); 
-            return isDetected
-        }*/
-
-        //remove obj form array enemiesList and add score/level
-        /*destroyTrack(){
-            this.trackList.splice(0);
-        }*/
         
     }
 
     
     class GameManager{
-        
+        basedPoindEndIndex;
         constructor () {
-            
+            this.basedPoindEnd;
+            this.selectBasedTrackPointEndStatment();
         }
         
-        levelComplete(){
+        /*levelComplete(){
             bulletsManager.destroyAllBullet();
             this.levelUp();
             this.scoreUp(10);
@@ -411,23 +367,81 @@ $( window ).on( "load", function() {
                 
             
             enemiesManager.createEnemies(Config.enemyColumn, Config.enemyRow);
-        }
+        }*/
         
         scoreUp() {
             Config.score += 10;
+            if (Config.score % 10 == 0) {
+                gameManager.levelUp();
+            }
         }
         
         levelUp() {
-            Config.level++;
+            
+            Config.roadWidthAsphalt -= 30;
+            
+            if(Config.roadWidthAsphalt < Config.roadWidthAsphaltminx) Config.roadWidthAsphalt = Config.roadWidthAsphaltminx;
+            Config.tick=0;
+            
+            
+            Config.level += 1;
+            trackManager.destroyTrack();
+            trackManager.buildNewStart();
+            
+        }
+        
+        selectBasedTrackPointEndStatment(){
+            let maxDelta = 999999;
+            for(var i=0;i<trackManager.densityBasedTrackPoint;i++) {
+                let delta = Math.abs(trackManager.basedTrackPointList[i].vector2.posX - player.posX);
+//                console.log("delta");
+//            console.log(delta);
+                if(maxDelta >= delta) this.basedPoindEndIndex = i;
+                else break;
+            }
+            //TODO end statment
         }
         
         gameoverstatment(){
-            if(trackManager.checkCollision()){
-                player.posX = 355;
+            let en = trackManager.basedTrackPointList[this.basedPoindEndIndex].vector2;
+            let end = en.posX;
+            let leftEndStatment = end - Config.roadWidthAsphalt - Config.roadWidthBorder;
+            let rightEndStatment = end + Config.roadWidthAsphalt + Config.roadWidthBorder - 20;
+            
+            /*ctx2.beginPath();
+            ctx2.rect(leftEndStatment, en.posY, 20, 20);
+            ctx2.rect(rightEndStatment, en.posY, 20, 20);
+            ctx2.closePath();
+            ctx2.fillStyle = "orange";
+            ctx2.fill();*/
+            
+            
+            
+//            console.log("sadsas");
+//            console.log(leftEndStatment);
+//            console.log(rightEndStatment);
+//            console.log(en.posY);
+            if(Config.tick<trackManager.densityBasedTrackPoint) {
+                player.posX = en.posX;
+                Config.tick++;
+            }
+            if(player.posX < leftEndStatment || player.posX > rightEndStatment){
                 trackManager.destroyTrack();
                 trackManager.buildNewStart();
+                
+                //player.posX = en.posX;
                 Config.score = 0;
+                Config.level = 1;
+                
+                Config.roadWidthAsphalt = Config.roadWidthAsphaltmax;
+                Config.tick=0;
             }
+//            console.log("asadffsasassfaasfad");
+//            console.log(Math.abs(en.posY+camera.posY - player.posY));
+//            console.log(Math.abs(trackManager.basedTrackPointList[this.basedPoindEndIndex+1].vector2.posY +camera.posY- player.posY));
+            if(Math.abs(en.posY+camera.posY - player.posY) > Math.abs(trackManager.basedTrackPointList[this.basedPoindEndIndex+1].vector2.posY +camera.posY- player.posY))
+            this.basedPoindEndIndex++;
+            
         }
     }
     
@@ -441,10 +455,10 @@ $( window ).on( "load", function() {
     }
 
     function physicUpdate(){
-        camera.update(2);
+        camera.update(8);
         player.moveUpdate();
         //trackManager.physicUpdate();
-        //gameManager.gameoverstatment();
+        gameManager.gameoverstatment();
     }
     //instance single object class player bulletsManager enemiesManager hud
     const player = new Player (355, 370);
