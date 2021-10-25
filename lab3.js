@@ -15,18 +15,17 @@ $( window ).on( "load", function() {
         moveLeftAlt: 37,
         moveRightAlt: 39,
         
-        bestScore: 0,
-        score: 0,
-        level: 1,
         
-        spaceBetweenBasedTrackPoint: 25,//
+        score: 0,
+        
+        spaceBetweenBasedTrackPoint: 40,//
         singleccelerationCurve: 1, // max change acceleration
         maxAccelerationCurve: 8, //max curve radius
         maxRadiusCurve: 45, // max maxAccelerationCurve multiply
-        roadWidthAsphaltmin: 40,
-        roadWidthAsphaltmax: 160,
-        roadWidthAsphalt: 160,
-        roadWidthBorder: 10,
+        roadWidthAsphalt: 100,
+        roadWidthBorder: 20,
+        
+        cameraSpeed: 6,
         
         tick: 0,
     }
@@ -62,7 +61,6 @@ $( window ).on( "load", function() {
             ctx2.font = "24px Arial";
             ctx2.fillStyle = "white";   
             ctx2.fillText("Score:   "+Config.score, 10, 25);
-            ctx2.fillText("Level:   "+Config.level, 10, 50);
         }
     }
     
@@ -94,14 +92,6 @@ $( window ).on( "load", function() {
             else if(this.isSteeringRight) ctx2.drawImage(this.carR,this.posX-20,this.posY-10,carSizeLR,carSizeLR);
             //forward
             else ctx2.drawImage(this.car,this.posX,this.posY,carSize,carSize);
-            
-            
-        
-            /*ctx2.beginPath();
-            ctx2.fillStyle = "black";
-            ctx2.rect(this.posX, this.posY, this.sizeX,this.sizeY); 
-            ctx2.fill();
-            ctx2.closePath();*/
         }
         
         move(dirMove){
@@ -163,14 +153,72 @@ $( window ).on( "load", function() {
         }
     }
 
-    /*class ExtendedTrackPoint{
-        constructor (posX, posY, index) {
-            this.index = index;
-            
+    class  ObjectOnRoad {
+        constructor(posX, posY, type){
             this.posX = posX;
-            this.posY = posY;
+            this.posY = posY-camera.posY;
+            this.type = type;
         }
-    }*/
+        
+        collider(){
+            
+            
+            if(Math.abs((this.posX-10) - (player.posX+8)) < 20 && Math.abs((this.posY+10+camera.posY) - (player.posY+12)) < 15){
+                if (this.type == "point"){
+                    objectOnRoadManager.killMe(this);
+                    gameManager.scoreUp();
+                } else if (this.type == "obstacle") {
+                    gameManager.gameover();
+                } else {
+                    console.log("ERROR O1: ObjectOnRoad unsupported type");
+                }
+            }
+        }
+        
+        draw(){
+            ctx2.beginPath();
+            if (this.type == "point"){
+                ctx2.fillStyle = "green";
+                ctx2.rect(this.posX, this.posY+camera.posY, 15,15); 
+            } else if (this.type == "obstacle") {
+                ctx2.fillStyle = "red";
+                ctx2.rect(this.posX, this.posY+camera.posY, 20,20); 
+            } else {
+                console.log("ERROR O2: ObjectOnRoad unsupported type");
+            }
+            ctx2.fill();
+            ctx2.closePath();
+        }
+    }
+
+    class  ObjectOnRoadManager {
+        objectOnRoadList = new Array;
+        
+        constructor(){
+            
+        }
+        
+        neObjectOnRoad(type){
+            if (this.objectOnRoadList.length > 60) this.objectOnRoadList.splice(1,40);
+                
+            let posX = Math.random()*(ctx2.canvas.width-50)+25;
+            let posY = -25;
+            this.objectOnRoadList.push(new ObjectOnRoad(posX, posY, type));
+        }
+
+        killMe(me){
+            var index = this.objectOnRoadList.findIndex((e => e === me));
+            this.objectOnRoadList.splice(index,1);
+        }
+        
+        collider(){
+            this.objectOnRoadList.forEach(e=>e.collider());
+        }
+
+        draw(){
+            this.objectOnRoadList.forEach(e=>e.draw());
+        }
+    }
 
     class MeshTriangle{
         constructor (a, b, c) {
@@ -286,25 +334,17 @@ $( window ).on( "load", function() {
             else if (acceleration < -Config.maxAccelerationCurve) acceleration = -Config.maxAccelerationCurve;
             
             let calcX = (prev.vector2.posX + (acceleration * Config.maxRadiusCurve / this.spaceBetweenBasedTrackPoint));
+            
             //dont let generate road on lefrt/right of render area
             if (calcX+Config.roadWidthAsphalt+Config.roadWidthBorder>ctx2.canvas.width) {calcX = prev.vector2.posX;acceleration=0}
             if (calcX-Config.roadWidthAsphalt-Config.roadWidthBorder<0) {calcX = prev.vector2.posX;acceleration=0}
             
-            //first fe block acc = 0
-            //console.log(this.basedTrackPointList.length);
-            if(Config.tick<this.densityBasedTrackPoint*2) {
-                //console.log(Config.tick);
-                //calcX=390;
-                //Config.tick++;
-                //acceleration=0;
-            }//calcX = 400;
             
             this.basedTrackPointList.push(new BasedTrackPoint(
                 prev.index+1, //index
                 calcX,//posX
                 prev.vector2.posY - this.spaceBetweenBasedTrackPoint,//posY
                 acceleration));
-            //if(Config.tick == 1) player.posX = calcX;
         };
         
         newExtendedTrackPoint(basedTrackPointIndex){
@@ -352,42 +392,10 @@ $( window ).on( "load", function() {
             this.basedPoindEnd;
             this.selectBasedTrackPointEndStatment();
         }
-        
-        /*levelComplete(){
-            bulletsManager.destroyAllBullet();
-            this.levelUp();
-            this.scoreUp(10);
-            
-            if (Config.level % 2 == 1) {
-                if(Config.enemyRow < Config.enemyRowMax) Config.enemyRow += 1;
-            }
-            else if (Config.level % 2 == 0) {
-                if(Config.enemyColumn < Config.enemyColumnMax) Config.enemyColumn += 1;
-            }
-                
-            
-            enemiesManager.createEnemies(Config.enemyColumn, Config.enemyRow);
-        }*/
+    
         
         scoreUp() {
             Config.score += 10;
-            if (Config.score % 100 == 0) {
-                gameManager.levelUp();
-            }
-        }
-        
-        levelUp() {
-            
-            Config.roadWidthAsphalt -= 30;
-            
-            if(Config.roadWidthAsphalt < Config.roadWidthAsphaltminx) Config.roadWidthAsphalt = Config.roadWidthAsphaltminx;
-            Config.tick=0;
-            
-            
-            Config.level += 1;
-            trackManager.destroyTrack();
-            trackManager.buildNewStart();
-            
         }
         
         selectBasedTrackPointEndStatment(){
@@ -402,72 +410,68 @@ $( window ).on( "load", function() {
             //TODO end statment
         }
         
+        newObjectOnRoad(){
+            let r = Math.random();
+            if(r>0.7) objectOnRoadManager.neObjectOnRoad("point")
+            else if (r>0.3) objectOnRoadManager.neObjectOnRoad("obstacle")
+        }
+        
         gameoverstatment(){
             let en = trackManager.basedTrackPointList[this.basedPoindEndIndex].vector2;
             let end = en.posX;
             let leftEndStatment = end - Config.roadWidthAsphalt - Config.roadWidthBorder;
             let rightEndStatment = end + Config.roadWidthAsphalt + Config.roadWidthBorder - 20;
             
-            /*ctx2.beginPath();
-            ctx2.rect(leftEndStatment, en.posY, 20, 20);
-            ctx2.rect(rightEndStatment, en.posY, 20, 20);
-            ctx2.closePath();
-            ctx2.fillStyle = "orange";
-            ctx2.fill();*/
-            
-            
-            
-//            console.log("sadsas");
-//            console.log(leftEndStatment);
-//            console.log(rightEndStatment);
-//            console.log(en.posY);
             if(Config.tick<trackManager.densityBasedTrackPoint) {
                 player.posX = en.posX;
                 Config.tick++;
             }
             if(player.posX < leftEndStatment || player.posX > rightEndStatment){
-                trackManager.destroyTrack();
+                this.gameover();
+            }
+            
+            //select next basepoint as point to collider
+            if(Math.abs(en.posY+camera.posY - player.posY) > Math.abs(trackManager.basedTrackPointList[this.basedPoindEndIndex+1].vector2.posY +camera.posY- player.posY))
+            this.basedPoindEndIndex++;
+            
+        }
+        
+        gameover(){
+            trackManager.destroyTrack();
                 trackManager.buildNewStart();
                 
                 //player.posX = en.posX;
                 Config.score = 0;
                 Config.level = 1;
                 
-                Config.roadWidthAsphalt = Config.roadWidthAsphaltmax;
                 Config.tick=0;
-            }
-//            console.log("asadffsasassfaasfad");
-//            console.log(Math.abs(en.posY+camera.posY - player.posY));
-//            console.log(Math.abs(trackManager.basedTrackPointList[this.basedPoindEndIndex+1].vector2.posY +camera.posY- player.posY));
-            if(Math.abs(en.posY+camera.posY - player.posY) > Math.abs(trackManager.basedTrackPointList[this.basedPoindEndIndex+1].vector2.posY +camera.posY- player.posY))
-            this.basedPoindEndIndex++;
-            
         }
     }
     
     function draw(){
         ctx2.clearRect(0, 0, 800, 600);
         
-        //trackManager.draw();
         trackManager.meshRoad.draw();
+        objectOnRoadManager.draw();
         player.draw();
         hud.draw();
     }
 
     function physicUpdate(){
-        camera.update(8);
+        camera.update(Config.cameraSpeed);
         player.moveUpdate();
-        //trackManager.physicUpdate();
+        objectOnRoadManager.collider();
         gameManager.gameoverstatment();
     }
     //instance single object class player bulletsManager enemiesManager hud
     const player = new Player (355, 370);
     const camera = new Camera (0, 0);
+    const objectOnRoadManager = new ObjectOnRoadManager ();
     const trackManager = new TrackManager ();
     const hud = new HUD ();
     const gameManager = new GameManager ();
 
     setInterval(physicUpdate, Config.frameUpdate); // update physics
     setInterval(draw, Config.physicUpdate); //draw frame
-    setInterval(gameManager.scoreUp, 1000); //draw frame
+    setInterval(gameManager.newObjectOnRoad, 100); //draw frame
 });
